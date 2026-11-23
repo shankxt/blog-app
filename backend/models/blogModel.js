@@ -17,7 +17,7 @@ const commentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Blog Schema
@@ -31,6 +31,7 @@ const blogSchema = new mongoose.Schema(
 
     content: {
       type: String,
+      trim: true,
       required: [true, "Blog content is required"],
     },
 
@@ -49,7 +50,7 @@ const blogSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Blog = mongoose.model("Blog", blogSchema);
