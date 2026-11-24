@@ -1,9 +1,16 @@
-const { createBlog,getAllBlogs } = require("../controllers/blogController");
+const {
+  createBlog,
+  getAllBlogs,
+  getSingleBlog,
+  updateBlog,
+} = require("../controllers/blogController");
 const { isAuthenticated } = require("../middleware/authMiddleware");
 
 const router = require("express").Router();
 
 router.post("/", isAuthenticated, createBlog);
-router.get("/", isAuthenticated, getAllBlogs);
+router.get("/", getAllBlogs);
+router.get("/:id", getSingleBlog);
+router.put("/:id", updateBlog);
 
 module.exports = router;

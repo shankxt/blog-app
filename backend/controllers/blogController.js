@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Blog = require("../models/blogModel");
 
 const createBlog = async (req, res) => {
@@ -93,4 +94,73 @@ const getAllBlogs = async (req, res) => {
     });
   }
 };
-module.exports = { createBlog, getAllBlogs };
+
+const getSingleBlog = async (req, res) => {
+  try {
+    const id = req.params.id;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Id",
+      });
+    }
+
+    const blog = await Blog.findById(id).populate("author", "fullName email");
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog doesn't exist",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Blog fetched successfully",
+      blog: blog,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const updateBlog = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const { title, content, image } = req.body;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Id",
+      });
+    }
+
+    const blog = await Blog.findById(id);
+
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog doesn't exist",
+      });
+    }
+
+    if (!blog.author.equals(req.user.userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to update this blog",
+      });
+    }
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+module.exports = { createBlog, getAllBlogs, getSingleBlog, updateBlog };
