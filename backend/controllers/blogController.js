@@ -35,31 +35,40 @@ const createBlog = async (req, res) => {
 
 const getAllBlogs = async (req, res) => {
   try {
+    // Time for latest24Hours data only
     const now = new Date();
     const last24Hours = new Date(now - 24 * 60 * 60 * 1000);
     const dateFilter = {
       createdAt: {
+        // $gte -> greaterthan or equal & $lte -> smallerthan or equal
         $gte: last24Hours,
         $lte: now,
       },
     };
 
-    const page = Number(req.query.page ?? 1);
+    // Pagination Implementation
+    const page = Number(req.query.page ?? 1); //accepts through query
+
+    // query page validation
     if (!Number.isInteger(page) || Number.isNaN(page) || page < 1) {
       return res.status(400).json({
         success: false,
         message: "Incorrect page value",
       });
     }
-    const limit = 10;
-    const skip = (page - 1) * limit;
-    const totalBlogs = await Blog.countDocuments(dateFilter);
-    const totalPages = Math.ceil(totalBlogs / limit);
+    // Concepts for pagination & formulas
+    const limit = 10; // content in one page
+    const skip = (page - 1) * limit; // skip page iteration for next page's content
+    const totalBlogs = await Blog.countDocuments(dateFilter); // find totalBlogs in our database
+    const totalPages = Math.ceil(totalBlogs / limit); // totalPages formula
+
+    // filter & sort blogs with pagination limits
     const blogs = await Blog.find(dateFilter)
       .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit);
 
+    // check if no content avilable or fetched with pagination
     if (blogs.length === 0) {
       return res.status(200).json({
         success: true,
@@ -75,6 +84,7 @@ const getAllBlogs = async (req, res) => {
       });
     }
 
+    // successfully return fetched blogs
     return res.status(200).json({
       success: true,
       message: "Blogs fetched successfully",
