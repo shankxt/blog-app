@@ -36,8 +36,15 @@ const getAllBlogs = async (req, res) => {
   try {
     const now = new Date();
     const last24Hours = new Date(now - 24 * 60 * 60 * 1000);
-    const page = Number(req.query.page) || 1;
-    if (!page.isInteger() || !page.isNaN()) {
+    const dateFilter = {
+      createdAt: {
+        $gte: last24Hours,
+        $lte: now,
+      },
+    };
+
+    const page = Number(req.query.page ?? 1);
+    if (!Number.isInteger(page) || Number.isNaN(page) || page < 1) {
       return res.status(400).json({
         success: false,
         message: "Incorrect page value",
@@ -45,13 +52,10 @@ const getAllBlogs = async (req, res) => {
     }
     const limit = 10;
     const skip = (page - 1) * limit;
-    const blogs = await Blog.find({
-      createdAt: {
-        $gte: last24Hours,
-        $lte: now,
-      },
-    })
-      .sort({ createdAt: -1 })
+    const totalBlogs = await Blog.countDocuments(dateFilter);
+    const totalPages = Math.ceil(totalBlogs / limit);
+    const blogs = await Blog.find(dateFilter)
+      .sort({ createdAt: -1, _id: -1 })
       .skip(skip)
       .limit(limit);
 
@@ -59,6 +63,13 @@ const getAllBlogs = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "No blogs available",
+        pagination: {
+          currentPage: page,
+          totalBlogs,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
         blogs: [],
       });
     }
@@ -66,6 +77,13 @@ const getAllBlogs = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Blogs fetched successfully",
+      pagination: {
+        currentPage: page,
+        totalBlogs,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
       blogs: blogs,
     });
   } catch (err) {
