@@ -231,8 +231,64 @@ const updateBlog = async (req, res) => {
         message: "You are not authorized to update this blog",
       });
     }
+
+    // Allowed fields that are accepted to update the blog
+    const allowedFields = { title, content, image };
+
+    // Remove fields that were not provided in the request
+    const entries = Object.entries(allowedFields).filter(
+      ([key, value]) => value !== undefined,
+    );
+
+    // At least one allowed field must be provided
+    if (entries.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "At least one field is required",
+      });
+    }
+
+    // Validate each provided field
+    for (const [key, value] of entries) {
+      // Reject null values for all allowed fields
+      if (value === null) {
+        return res.status(400).json({
+          success: false,
+          message: `${key} cannot be null`,
+        });
+      }
+
+      // Check whether the provided value is a string
+      if (typeof value !== "string") {
+        return res.status(400).json({
+          success: false,
+          message: `${key} must be a string`,
+        });
+      }
+
+      // Title and content cannot be empty or whitespace-only
+      if (key !== "image" && value.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: `${key} cannot be empty`,
+        });
+      }
+    }
+
+    for (const [key, value] of entries) {
+      blog[key] = value;
+    }
+
+    await blog.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Blog updated successfully",
+      blog,
+    });
   } catch (err) {
-    // Handle unexpected server errors
+    // // Log the actual error in terminal
+    // console.error("Update Blog Error:", err);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
