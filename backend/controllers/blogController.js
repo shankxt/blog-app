@@ -296,10 +296,60 @@ const updateBlog = async (req, res) => {
   }
 };
 
+const deleteBlog = async (req, res) => {
+  try {
+    // Get blog ID from URL parameters
+    const id = req.params.id;
+
+    // Validate MongoDB ObjectId before querying database
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Id",
+      });
+    }
+
+    // Find the blog document using its ID
+    const blog = await Blog.findById(id);
+
+    // Check whether the requested blog exists
+    if (!blog) {
+      return res.status(404).json({
+        success: false,
+        message: "Blog doesn't exist",
+      });
+    }
+
+    // Check whether the logged-in user is the author of this blog
+    // Only the original author is allowed to delete their blog
+    if (!blog.author.equals(req.user.userId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete this blog",
+      });
+    }
+
+    // Delete the blog document
+    await blog.deleteOne();
+
+    return res.status(200).json({
+      success: true,
+      message: "Blog deleted successfully",
+    });
+  } catch (err) {
+    console.error("Delete Blog Error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 // Export all blog controllers to use them inside routes
 module.exports = {
   createBlog,
   getAllBlogs,
   getSingleBlog,
   updateBlog,
+  deleteBlog,
 };
